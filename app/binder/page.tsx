@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth-options'
 import { supabase, type Card } from '@/lib/supabase'
 import Header from '@/components/Header'
 import Image from 'next/image'
@@ -46,7 +46,7 @@ export default async function BinderPage() {
             </div>
             {/* Group rows */}
             {groupByRow(pages[pageNum]).map((rowCards, ri) => (
-              <div key={ri} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-end' }}>
+              <div key={ri} style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'flex-start' }}>
                 {rowCards.map((card) => (
                   <BinderCard key={card.id} card={card} />
                 ))}

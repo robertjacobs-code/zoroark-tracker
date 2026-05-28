@@ -4,9 +4,8 @@ import Image from 'next/image'
 import { useState } from 'react'
 import type { Card } from '@/lib/supabase'
 
-const CARD_W = 200
-const CARD_H = 279
-const STACK_OFFSET = 6
+const CARD_W = 180
+const CARD_H = 251
 
 type Props = {
   card: Card
@@ -19,18 +18,62 @@ const REGION_FLAG: Record<string, string> = {
   DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', PT: '🇵🇹',
 }
 
+function CardImage({ imageUrl, name, number, opacity, onClick, isAdmin, badge }: {
+  imageUrl: string | null; name: string; number: string
+  opacity: number; onClick?: () => void; isAdmin: boolean; badge?: string
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        position: 'relative',
+        width: CARD_W,
+        height: CARD_H,
+        borderRadius: 10,
+        overflow: 'hidden',
+        opacity,
+        transition: 'opacity 0.2s',
+        cursor: isAdmin && onClick ? 'pointer' : 'default',
+        flexShrink: 0,
+        background: '#1e1e2e',
+        border: '1px dashed #333',
+      }}
+    >
+      {imageUrl ? (
+        <Image
+          src={imageUrl}
+          alt={`${name} ${number}`}
+          width={CARD_W}
+          height={CARD_H}
+          style={{ objectFit: 'cover', display: 'block', width: '100%', height: '100%' }}
+          unoptimized
+        />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 12 }}>
+          No image
+        </div>
+      )}
+      {badge && (
+        <div style={{
+          position: 'absolute', bottom: 6, right: 6,
+          background: badge === '3/3' ? '#4ade80' : '#7f77dd',
+          color: '#fff', borderRadius: 20, padding: '2px 8px',
+          fontSize: 12, fontWeight: 600,
+        }}>
+          {badge}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function CardTile({ card, isAdmin, onUpdate }: Props) {
   const [copies, setCopies] = useState(card.copies_owned)
   const [saving, setSaving] = useState(false)
+  const noneOwned = copies === 0
 
-  const owned = copies
-  const allOwned = owned === 3
-  const noneOwned = owned === 0
-
-  async function handleCopyClick(idx: number) {
-    if (!isAdmin) return
-    // clicking an owned copy removes it; clicking unowned adds up to that index
-    const newCopies = copies > idx ? idx : idx + 1
+  async function handleCopyClick(newCopies: number) {
+    if (!isAdmin || saving) return
     setSaving(true)
     try {
       const res = await fetch(`/api/cards/${card.id}`, {
@@ -47,110 +90,52 @@ export default function CardTile({ card, isAdmin, onUpdate }: Props) {
     }
   }
 
-  const placeholder = (
-    <div
-      style={{
-        width: CARD_W,
-        height: CARD_H,
-        borderRadius: 10,
-        background: '#1e1e2e',
-        border: '1px dashed #444',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#555',
-        fontSize: 13,
-      }}
-    >
-      No image
-    </div>
-  )
-
-  const cardImg = (opacity: number, zIndex: number, offsetX: number, offsetY: number, idx: number) => (
-    <div
-      key={idx}
-      onClick={() => handleCopyClick(idx)}
-      title={isAdmin ? (idx < copies ? 'Click to remove copy' : 'Click to mark owned') : undefined}
-      style={{
-        position: 'absolute',
-        left: offsetX,
-        top: offsetY,
-        zIndex,
-        opacity,
-        transition: 'opacity 0.2s, transform 0.15s',
-        cursor: isAdmin ? 'pointer' : 'default',
-        borderRadius: 10,
-        overflow: 'hidden',
-        width: CARD_W,
-        height: CARD_H,
-        boxShadow: opacity === 1 ? '0 4px 16px rgba(0,0,0,0.5)' : 'none',
-      }}
-    >
-      {card.image_url ? (
-        <Image
-          src={card.image_url}
-          alt={`${card.card_name} ${card.card_number}`}
-          width={CARD_W}
-          height={CARD_H}
-          style={{ objectFit: 'cover', borderRadius: 10, display: 'block' }}
-          unoptimized
-        />
-      ) : placeholder}
-    </div>
-  )
-
-  // Desktop: show all 3 slots stacked. Mobile handled via CSS class.
-  const stackHeight = CARD_H + STACK_OFFSET * 2
+  function toggleCopy(idx: number) {
+    const newCopies = copies > idx ? idx : idx + 1
+    handleCopyClick(newCopies)
+  }
 
   return (
-    <div className="card-tile" style={{ opacity: noneOwned ? 0.35 : 1, transition: 'opacity 0.2s' }}>
-      {/* Desktop: stacked 3-slot view */}
-      <div className="stack-desktop" style={{ position: 'relative', width: CARD_W + STACK_OFFSET * 2, height: stackHeight, marginBottom: 12 }}>
-        {[2, 1, 0].map((idx) => {
-          const isOwned = idx < owned
-          const ox = (2 - idx) * STACK_OFFSET
-          const oy = (2 - idx) * STACK_OFFSET
-          return cardImg(isOwned ? 1 : 0.2, idx + 1, ox, oy, idx)
-        })}
+    <div style={{ opacity: noneOwned ? 0.35 : 1, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+
+      {/* Desktop: 3 cards side by side in a row */}
+      <div className="stack-desktop" style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+        {[0, 1, 2].map((idx) => (
+          <CardImage
+            key={idx}
+            imageUrl={card.image_url}
+            name={card.card_name}
+            number={card.card_number}
+            opacity={idx < copies ? 1 : 0.15}
+            onClick={() => toggleCopy(idx)}
+            isAdmin={isAdmin}
+          />
+        ))}
       </div>
 
       {/* Mobile: single card with counter badge */}
-      <div className="stack-mobile" style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
-        <div
-          onClick={() => handleCopyClick(Math.min(copies, 2))}
-          style={{ cursor: isAdmin ? 'pointer' : 'default', borderRadius: 10, overflow: 'hidden', width: CARD_W, height: CARD_H }}
-        >
-          {card.image_url ? (
-            <Image
-              src={card.image_url}
-              alt={`${card.card_name} ${card.card_number}`}
-              width={CARD_W}
-              height={CARD_H}
-              style={{ objectFit: 'cover', display: 'block' }}
-              unoptimized
-            />
-          ) : placeholder}
-        </div>
-        <div style={{
-          position: 'absolute', bottom: 8, right: 8,
-          background: allOwned ? '#4ade80' : '#7f77dd',
-          color: '#fff', borderRadius: 20, padding: '3px 10px',
-          fontSize: 13, fontWeight: 600,
-        }}>
-          {copies}/3
-        </div>
+      <div className="stack-mobile" style={{ marginBottom: 10 }}>
+        <CardImage
+          imageUrl={card.image_url}
+          name={card.card_name}
+          number={card.card_number}
+          opacity={1}
+          onClick={() => handleCopyClick(copies < 3 ? copies + 1 : 0)}
+          isAdmin={isAdmin}
+          badge={`${copies}/3`}
+        />
       </div>
 
-      {/* Copy dots row (desktop only) */}
-      <div className="copy-dots" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+      {/* Copy dots (desktop) */}
+      <div className="copy-dots" style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
         {[0, 1, 2].map((i) => (
           <button
             key={i}
-            onClick={() => handleCopyClick(i)}
+            onClick={() => toggleCopy(i)}
             disabled={!isAdmin || saving}
             title={isAdmin ? (i < copies ? 'Remove copy' : 'Mark owned') : undefined}
             style={{
-              width: 14, height: 14, borderRadius: '50%',
+              width: 12, height: 12, borderRadius: '50%',
               background: i < copies ? '#7f77dd' : '#2a2a2a',
               border: i < copies ? '2px solid #9f97ed' : '2px solid #444',
               cursor: isAdmin ? 'pointer' : 'default',
@@ -177,13 +162,13 @@ export default function CardTile({ card, isAdmin, onUpdate }: Props) {
       </div>
 
       <style>{`
-        .stack-desktop { display: block; }
-        .stack-mobile { display: none; }
-        .copy-dots { display: flex; }
+        .stack-desktop { display: flex !important; }
+        .stack-mobile { display: none !important; }
+        .copy-dots { display: flex !important; }
         @media (max-width: 640px) {
-          .stack-desktop { display: none; }
-          .stack-mobile { display: block; }
-          .copy-dots { display: none; }
+          .stack-desktop { display: none !important; }
+          .stack-mobile { display: block !important; }
+          .copy-dots { display: none !important; }
         }
       `}</style>
     </div>

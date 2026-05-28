@@ -116,7 +116,7 @@ export default function CardGrid({ isAdmin }: Props) {
           )}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(580px, 1fr))',
             gap: 32,
           }}>
             {grouped[r].map((card) => (
