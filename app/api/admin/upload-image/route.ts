@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
-import { isAdmin } from '@/lib/auth'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
+
+async function checkAdmin() {
+  const session = await getServerSession(authOptions)
+  const discordId = session ? (session as Record<string, any>).discordId : null
+  return discordId === '387368293268324362'
+}
 
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin())) {
+  if (!(await checkAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -18,7 +25,6 @@ export async function POST(req: NextRequest) {
 
   const db = getServiceClient()
 
-  // If a URL was provided directly, just update the record
   if (imageUrl) {
     const { data, error } = await db
       .from('cards')
@@ -30,7 +36,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data)
   }
 
-  // If a file was uploaded, store in Supabase Storage
   if (file) {
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `cards/${cardId}.${ext}`
@@ -38,21 +43,16 @@ export async function POST(req: NextRequest) {
 
     const { error: uploadError } = await db.storage
       .from('card-images')
-      .upload(path, buffer, {
-        contentType: file.type,
-        upsert: true,
-      })
+      .upload(path, buffer, { contentType: file.type, upsert: true })
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 })
     }
 
     const { data: urlData } = db.storage.from('card-images').getPublicUrl(path)
-    const publicUrl = urlData.publicUrl
-
     const { data, error } = await db
       .from('cards')
-      .update({ image_url: publicUrl })
+      .update({ image_url: urlData.publicUrl })
       .eq('id', cardId)
       .select()
       .single()

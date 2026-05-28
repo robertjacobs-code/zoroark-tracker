@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
-import { isAdmin } from '@/lib/auth'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
+
+async function checkAdmin() {
+  const session = await getServerSession(authOptions)
+  const discordId = session ? (session as Record<string, any>).discordId : null
+  return discordId === '387368293268324362'
+}
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!(await isAdmin())) {
+  if (!(await checkAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
