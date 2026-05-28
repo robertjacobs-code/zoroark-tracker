@@ -21,7 +21,7 @@ export default async function HomePage() {
         background: '#e8e4de',
       }}>
         <img
-          src="https://ksgoweicwwtutlgtfnnj.supabase.co/storage/v1/object/public/card-images/wp11891945.png
+          src="https://ksgoweicwwtutlgtfnnj.supabase.co/storage/v1/object/public/card-images/wp11891945.png"
           alt=""
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',
