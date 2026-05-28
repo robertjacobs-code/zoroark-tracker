@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
-import { authOptions } from '../api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth-options'
 import { getServiceClient } from '@/lib/supabase'
 import Header from '@/components/Header'
 import AdminClient from './AdminClient'
