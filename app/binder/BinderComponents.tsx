@@ -12,32 +12,32 @@ export function BinderPageDisplay({ pageNum, cards }: PageProps) {
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7f77dd', marginBottom: 16 }}>
         Page {pageNum}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {rows.map((rowCards, ri) => (
-          <div key={ri} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            {Array.from({ length: 3 }).map((_, i) => {
-              const card = rowCards[i]
-              return card ? <BinderCard key={card.id} card={card} /> : <EmptySlot key={i} />
-            })}
-          </div>
+          <BinderRow key={ri} cards={rowCards} />
         ))}
       </div>
     </div>
   )
 }
 
-function BinderCard({ card }: { card: Card }) {
+// One binder row = one card variant, shown 3 times across (copy 1, copy 2, copy 3)
+function BinderRow({ cards }: { cards: Card[] }) {
+  // All cards in a row are the same variant, just take the first for image/info
+  const card = cards[0]
+  if (!card) return null
+
   return (
-    <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {[0, 1, 2].map((i) => {
-        const owned = i < card.copies_owned
+    <div style={{ display: 'flex', gap: 6 }}>
+      {[0, 1, 2].map((copyIdx) => {
+        const owned = copyIdx < card.copies_owned
         return (
-          <div key={i} style={{ opacity: owned ? 1 : 0.2, transition: 'opacity 0.2s' }}>
+          <div key={copyIdx} style={{ flex: '1 1 0', opacity: owned ? 1 : 0.2, transition: 'opacity 0.2s' }}>
             <div style={{ aspectRatio: '2.5/3.5', borderRadius: 6, overflow: 'hidden', background: '#f0ede8', border: '1px solid rgba(0,0,0,0.08)', position: 'relative' }}>
               {card.image_url ? (
                 <Image src={card.image_url} alt={card.card_name} fill style={{ objectFit: 'cover' }} unoptimized />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 10, fontStyle: 'italic' }}>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 9, fontStyle: 'italic' }}>
                   no image
                 </div>
               )}
@@ -45,20 +45,26 @@ function BinderCard({ card }: { card: Card }) {
           </div>
         )
       })}
-      <div style={{ fontSize: 10, color: '#aaa', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {card.card_number}
-      </div>
-      <div style={{ fontSize: 10, textAlign: 'center', color: card.copies_owned === 3 ? '#16a34a' : '#7f77dd', fontWeight: 600 }}>
-        {card.copies_owned}/3
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8, minWidth: 0 }}>
+        <div style={{ fontSize: 10, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {card.card_number}
+        </div>
+        <div style={{ fontSize: 10, color: card.copies_owned === 3 ? '#16a34a' : '#7f77dd', fontWeight: 600 }}>
+          {card.copies_owned}/3
+        </div>
       </div>
     </div>
   )
 }
 
-function EmptySlot() {
+function EmptyRow() {
   return (
-    <div style={{ flex: '1 1 0' }}>
-      <div style={{ aspectRatio: '2.5/3.5', borderRadius: 6, background: '#f5f3f0', border: '1px dashed rgba(0,0,0,0.1)' }} />
+    <div style={{ display: 'flex', gap: 6 }}>
+      {[0, 1, 2].map((i) => (
+        <div key={i} style={{ flex: '1 1 0' }}>
+          <div style={{ aspectRatio: '2.5/3.5', borderRadius: 6, background: '#f5f3f0', border: '1px dashed rgba(0,0,0,0.1)' }} />
+        </div>
+      ))}
     </div>
   )
 }
