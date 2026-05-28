@@ -7,7 +7,7 @@ const ALLOWED_ID = process.env.NEXT_PUBLIC_ALLOWED_DISCORD_USER_ID
 
 export default function Header() {
   const { data: session } = useSession()
-  const isAdmin = session && (session as any).discordId === process.env.NEXT_PUBLIC_ALLOWED_DISCORD_USER_ID
+  const isAdmin = session && (session as any).discordId === '387368293268324362'
 
   return (
     <header style={{
