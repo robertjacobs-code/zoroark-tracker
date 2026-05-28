@@ -39,7 +39,7 @@ export default async function HomePage() {
           </div>
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(42px, 6vw, 80px)',
-            margin: 0, lineHeight: 0.95, letterSpacing: '-0.03em', color: '#1a1a1a',
+            margin: 0, lineHeight: 0.95, letterSpacing: '-0.03em', color: '#1a1a1a', textTransform: 'uppercase',
           }}>
             Zoroark<br />Cards
           </h1>
