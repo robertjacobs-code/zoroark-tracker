@@ -28,17 +28,24 @@ export function BinderPageDisplay({ pageNum, cards }: PageProps) {
 
 function BinderCard({ card }: { card: Card }) {
   return (
-    <div style={{ opacity: card.copies_owned > 0 ? 1 : 0.35, transition: 'opacity 0.2s', flex: '1 1 0' }}>
-      <div style={{ aspectRatio: '2.5/3.5', borderRadius: 6, overflow: 'hidden', background: '#f0ede8', border: '1px solid rgba(0,0,0,0.08)', position: 'relative' }}>
-        {card.image_url ? (
-          <Image src={card.image_url} alt={card.card_name} fill style={{ objectFit: 'cover' }} unoptimized />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 10, fontStyle: 'italic' }}>
-            no image
+    <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {[0, 1, 2].map((i) => {
+        const owned = i < card.copies_owned
+        return (
+          <div key={i} style={{ opacity: owned ? 1 : 0.2, transition: 'opacity 0.2s' }}>
+            <div style={{ aspectRatio: '2.5/3.5', borderRadius: 6, overflow: 'hidden', background: '#f0ede8', border: '1px solid rgba(0,0,0,0.08)', position: 'relative' }}>
+              {card.image_url ? (
+                <Image src={card.image_url} alt={card.card_name} fill style={{ objectFit: 'cover' }} unoptimized />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 10, fontStyle: 'italic' }}>
+                  no image
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-      <div style={{ fontSize: 10, color: '#aaa', marginTop: 3, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        )
+      })}
+      <div style={{ fontSize: 10, color: '#aaa', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {card.card_number}
       </div>
       <div style={{ fontSize: 10, textAlign: 'center', color: card.copies_owned === 3 ? '#16a34a' : '#7f77dd', fontWeight: 600 }}>
