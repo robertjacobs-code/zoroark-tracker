@@ -1,9 +1,6 @@
 'use client'
-
 import Link from 'next/link'
 import { useSession, signIn, signOut } from 'next-auth/react'
-
-const ALLOWED_ID = process.env.NEXT_PUBLIC_ALLOWED_DISCORD_USER_ID
 
 export default function Header() {
   const { data: session } = useSession()
@@ -11,44 +8,31 @@ export default function Header() {
 
   return (
     <header style={{
-      background: '#0d0d1a',
-      borderBottom: '1px solid #1e1e3a',
-      padding: '0 24px',
-      height: 56,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
+      position: 'sticky', top: 0, zIndex: 100,
+      background: 'rgba(245,243,240,0.85)',
+      backdropFilter: 'blur(12px)',
+      borderBottom: '1px solid rgba(0,0,0,0.08)',
+      padding: '0 32px', height: 56,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <Link href="/" style={{ color: '#9f97ed', fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>
-          🦊 Zoroark Tracker
+      <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+        <Link href="/" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 15, color: '#1a1a1a', textDecoration: 'none', letterSpacing: '-0.02em' }}>
+          ZOROARK
         </Link>
-        <Link href="/binder" style={{ color: '#aaa', fontSize: 14, textDecoration: 'none' }}>
-          Binder View
-        </Link>
-        {isAdmin && (
-          <Link href="/admin" style={{ color: '#ef9f27', fontSize: 14, textDecoration: 'none' }}>
-            Admin
-          </Link>
-        )}
+        <nav style={{ display: 'flex', gap: 24 }}>
+          <Link href="/" style={{ color: '#666', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Collection</Link>
+          <Link href="/binder" style={{ color: '#666', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Binder</Link>
+          {isAdmin && <Link href="/admin" style={{ color: '#7f77dd', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Admin</Link>}
+        </nav>
       </div>
       <div>
         {session ? (
-          <button
-            onClick={() => signOut()}
-            style={{ background: 'none', border: '1px solid #333', borderRadius: 6, color: '#aaa', padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}
-          >
+          <button onClick={() => signOut()} style={{ background: 'none', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 6, color: '#666', padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
             Sign out
           </button>
         ) : (
-          <button
-            onClick={() => signIn('discord')}
-            style={{ background: '#5865f2', border: 'none', borderRadius: 6, color: '#fff', padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
-          >
-            Sign in with Discord
+          <button onClick={() => signIn('discord')} style={{ background: '#5865f2', border: 'none', borderRadius: 6, color: '#fff', padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+            Sign in
           </button>
         )}
       </div>

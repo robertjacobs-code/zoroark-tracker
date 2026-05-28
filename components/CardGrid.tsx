@@ -1,13 +1,12 @@
 'use client'
-
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Card } from '@/lib/supabase'
 import CardTile from './CardTile'
 import ProgressBar from './ProgressBar'
 
 type Props = { isAdmin: boolean }
-
 const REGIONS = ['ALL', 'EN', 'JP', 'CN', 'KR', 'DE', 'FR', 'OTHER']
+const REGION_LABEL: Record<string, string> = { EN: '🇺🇸 English', JP: '🇯🇵 Japanese', CN: '🇨🇳 Chinese', KR: '🇰🇷 Korean' }
 
 export default function CardGrid({ isAdmin }: Props) {
   const [cards, setCards] = useState<Card[]>([])
@@ -16,10 +15,7 @@ export default function CardGrid({ isAdmin }: Props) {
   const [loading, setLoading] = useState(true)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 250)
-    return () => clearTimeout(t)
-  }, [search])
+  useEffect(() => { const t = setTimeout(() => setDebouncedSearch(search), 250); return () => clearTimeout(t) }, [search])
 
   const fetchCards = useCallback(async () => {
     setLoading(true)
@@ -35,10 +31,9 @@ export default function CardGrid({ isAdmin }: Props) {
   useEffect(() => { fetchCards() }, [fetchCards])
 
   function handleUpdate(id: string, copies: number) {
-    setCards((prev) => prev.map((c) => c.id === id ? { ...c, copies_owned: copies } : c))
+    setCards(prev => prev.map(c => c.id === id ? { ...c, copies_owned: copies } : c))
   }
 
-  // Group by region for display
   const grouped = useMemo(() => {
     if (region !== 'ALL') return { [region]: cards }
     return cards.reduce<Record<string, Card[]>>((acc, c) => {
@@ -48,89 +43,72 @@ export default function CardGrid({ isAdmin }: Props) {
     }, {})
   }, [cards, region])
 
-  const usedRegions = Object.keys(grouped).filter((r) => grouped[r].length > 0)
+  const usedRegions = Object.keys(grouped).filter(r => grouped[r].length > 0)
 
   return (
     <div>
-      {/* Search + Filter bar */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder="Search by number, name, or set…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: '1 1 220px',
-            padding: '10px 14px',
-            background: '#1a1a2e',
-            border: '1px solid #333',
-            borderRadius: 8,
-            color: '#f0f0f0',
-            fontSize: 14,
-            outline: 'none',
-          }}
-        />
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          style={{
-            padding: '10px 14px',
-            background: '#1a1a2e',
-            border: '1px solid #333',
-            borderRadius: 8,
-            color: '#f0f0f0',
-            fontSize: 14,
-            cursor: 'pointer',
-          }}
-        >
-          {REGIONS.map((r) => <option key={r} value={r}>{r === 'ALL' ? 'All regions' : r}</option>)}
-        </select>
+      {/* Stats + search row */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        {/* Progress panel */}
+        {!debouncedSearch && region === 'ALL' && (
+          <div style={{ flex: '1 1 340px', background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid rgba(0,0,0,0.07)' }}>
+            <ProgressBar cards={cards} label="Overall" large />
+            {usedRegions.map(r => <ProgressBar key={r} cards={grouped[r]} label={REGION_LABEL[r] ?? r} />)}
+          </div>
+        )}
+        {/* Search + filter */}
+        <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input
+            type="text"
+            placeholder="Search by number, name, or set…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '100%', padding: '11px 16px', boxSizing: 'border-box',
+              background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10,
+              color: '#1a1a1a', fontSize: 14, outline: 'none',
+              fontFamily: 'inherit',
+            }}
+          />
+          <select
+            value={region}
+            onChange={e => setRegion(e.target.value)}
+            style={{
+              padding: '10px 14px', background: '#fff', border: '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 10, color: '#1a1a1a', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {REGIONS.map(r => <option key={r} value={r}>{r === 'ALL' ? 'All regions' : (REGION_LABEL[r] ?? r)}</option>)}
+          </select>
+        </div>
       </div>
 
-      {/* Overall progress */}
-      {!debouncedSearch && region === 'ALL' && (
-        <div style={{ marginBottom: 32, padding: '16px 20px', background: '#1a1a2e', borderRadius: 12, border: '1px solid #2a2a4e' }}>
-          <ProgressBar cards={cards} label="Overall collection" />
-          {usedRegions.map((r) => (
-            <ProgressBar key={r} cards={grouped[r]} label={r} />
-          ))}
-        </div>
-      )}
-
-      {loading && (
-        <div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading cards…</div>
-      )}
-
+      {loading && <div style={{ textAlign: 'center', color: '#999', padding: 60, fontSize: 14 }}>Loading…</div>}
       {!loading && cards.length === 0 && (
-        <div style={{ textAlign: 'center', color: '#666', padding: 40 }}>
+        <div style={{ textAlign: 'center', color: '#999', padding: 60 }}>
           {debouncedSearch ? `No cards matching "${debouncedSearch}"` : 'No cards found'}
         </div>
       )}
 
-      {!loading && usedRegions.map((r) => (
-        <div key={r} style={{ marginBottom: 48 }}>
+      {!loading && usedRegions.map(r => (
+        <div key={r} style={{ marginBottom: 56 }}>
           {region === 'ALL' && (
-            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: '#9f97ed', borderBottom: '1px solid #2a2a4e', paddingBottom: 10 }}>
-              {r === 'EN' ? '🇺🇸 English' : r === 'JP' ? '🇯🇵 Japanese' : r} · {grouped[r].length} variants
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+              <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
+                {REGION_LABEL[r] ?? r}
+              </h2>
+              <span style={{ fontSize: 12, color: '#999', background: 'rgba(0,0,0,0.06)', borderRadius: 20, padding: '3px 10px' }}>
+                {grouped[r].length} variants
+              </span>
+            </div>
           )}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(580px, 1fr))',
-            gap: 32,
-          }}>
-            {grouped[r].map((card) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(560px, 1fr))', gap: '32px 24px' }}>
+            {grouped[r].map(card => (
               <CardTile key={card.id} card={card} isAdmin={isAdmin} onUpdate={handleUpdate} />
             ))}
           </div>
         </div>
       ))}
-
-      <style>{`
-        @media (max-width: 640px) {
-          .card-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   )
 }
