@@ -1,6 +1,28 @@
 import NextAuth from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import DiscordProvider from 'next-auth/providers/discord'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handler = NextAuth(authOptions) as any
+const handler = NextAuth({
+  providers: [
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, account, profile }) {
+      if (account?.provider === 'discord' && profile) {
+        token.discordId = (profile as any).id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      ;(session as any).discordId = token.discordId
+      return session
+    },
+  },
+  pages: {
+    signIn: '/auth/signin',
+  },
+}) as any
+
 export { handler as GET, handler as POST }
