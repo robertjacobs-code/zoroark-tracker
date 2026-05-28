@@ -38,7 +38,7 @@ export default function CardTile({ card, isAdmin, onUpdate }: Props) {
         style={{
           width: CARD_W, height: CARD_H, borderRadius: 8, overflow: 'hidden',
           background: '#e8e4de', border: '1px solid rgba(0,0,0,0.08)',
-          opacity: owned ? 1 : 0.2, transition: 'opacity 0.2s, transform 0.15s',
+          opacity: owned ? 1 : 0.5, transition: 'opacity 0.2s, transform 0.15s',
           cursor: isAdmin ? 'pointer' : 'default', flexShrink: 0,
           transform: isAdmin && owned ? undefined : undefined,
         }}
