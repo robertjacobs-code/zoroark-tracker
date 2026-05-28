@@ -12,132 +12,172 @@ type CardRow = {
   sort_index: number
 }
 
-type Props = {
-  missingImages: CardRow[]
-  allCards: CardRow[]
-}
+type Props = { missingImages: CardRow[]; allCards: CardRow[] }
 
 export default function AdminClient({ missingImages, allCards }: Props) {
   const [tab, setTab] = useState<'missing' | 'all'>('missing')
   const [uploading, setUploading] = useState<string | null>(null)
   const [done, setDone] = useState<Set<string>>(new Set())
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({})
+  const [fileSelections, setFileSelections] = useState<Record<string, File>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  async function handleFileUpload(cardId: string, file: File) {
-    setUploading(cardId)
-    const fd = new FormData()
-    fd.append('card_id', cardId)
-    fd.append('image', file)
-    const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-    if (res.ok) setDone((d) => new Set([...d, cardId]))
-    setUploading(null)
-  }
-
-  async function handleUrlSave(cardId: string) {
+  async function saveUrl(cardId: string) {
     const url = urlInputs[cardId]?.trim()
     if (!url) return
     setUploading(cardId)
-    const fd = new FormData()
-    fd.append('card_id', cardId)
-    fd.append('image_url', url)
-    const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-    if (res.ok) setDone((d) => new Set([...d, cardId]))
-    setUploading(null)
+    setErrors(e => ({ ...e, [cardId]: '' }))
+    try {
+      const fd = new FormData()
+      fd.append('card_id', cardId)
+      fd.append('image_url', url)
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+      if (res.ok) {
+        setDone(d => new Set([...d, cardId]))
+      } else {
+        const text = await res.text()
+        setErrors(e => ({ ...e, [cardId]: `Error ${res.status}: ${text}` }))
+      }
+    } catch (err) {
+      setErrors(e => ({ ...e, [cardId]: String(err) }))
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  async function saveFile(cardId: string) {
+    const file = fileSelections[cardId]
+    if (!file) return
+    setUploading(cardId)
+    setErrors(e => ({ ...e, [cardId]: '' }))
+    try {
+      const fd = new FormData()
+      fd.append('card_id', cardId)
+      fd.append('image', file)
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+      if (res.ok) {
+        setDone(d => new Set([...d, cardId]))
+      } else {
+        const text = await res.text()
+        setErrors(e => ({ ...e, [cardId]: `Error ${res.status}: ${text}` }))
+      }
+    } catch (err) {
+      setErrors(e => ({ ...e, [cardId]: String(err) }))
+    } finally {
+      setUploading(null)
+    }
   }
 
   const displayCards = tab === 'missing'
-    ? missingImages.filter((c) => !done.has(c.id))
+    ? missingImages.filter(c => !done.has(c.id))
     : allCards
 
-  const tabStyle = (t: typeof tab) => ({
+  const tab1 = (t: typeof tab) => ({
     padding: '8px 20px',
-    background: tab === t ? '#7f77dd' : '#1a1a2e',
-    border: `1px solid ${tab === t ? '#7f77dd' : '#333'}`,
-    borderRadius: 6,
-    color: tab === t ? '#fff' : '#aaa',
-    cursor: 'pointer',
-    fontSize: 14,
-    fontWeight: tab === t ? 600 : 400,
+    background: tab === t ? '#7f77dd' : '#f0eefc',
+    border: `1px solid ${tab === t ? '#7f77dd' : '#ddd'}`,
+    borderRadius: 8, color: tab === t ? '#fff' : '#666',
+    cursor: 'pointer', fontSize: 13, fontWeight: 500,
   })
 
   return (
     <div id="missing-images">
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <button style={tabStyle('missing')} onClick={() => setTab('missing')}>
-          Missing images ({missingImages.filter((c) => !done.has(c.id)).length})
+        <button style={tab1('missing')} onClick={() => setTab('missing')}>
+          Missing images ({missingImages.filter(c => !done.has(c.id)).length})
         </button>
-        <button style={tabStyle('all')} onClick={() => setTab('all')}>
+        <button style={tab1('all')} onClick={() => setTab('all')}>
           All cards ({allCards.length})
         </button>
       </div>
 
       {displayCards.length === 0 && (
-        <div style={{ color: '#4ade80', padding: 40, textAlign: 'center' }}>
+        <div style={{ color: '#16a34a', padding: 40, textAlign: 'center', fontSize: 15 }}>
           ✅ All cards have images!
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {displayCards.map((card) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {displayCards.map(card => (
           <div key={card.id} style={{
-            background: '#1a1a2e',
-            border: `1px solid ${done.has(card.id) ? '#4ade80' : '#2a2a4e'}`,
-            borderRadius: 10,
-            padding: '14px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            flexWrap: 'wrap',
+            background: '#fff',
+            border: `1px solid ${done.has(card.id) ? '#86efac' : errors[card.id] ? '#fca5a5' : 'rgba(0,0,0,0.08)'}`,
+            borderRadius: 12, padding: '14px 18px',
+            display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
           }}>
-            {/* Card info */}
-            <div style={{ flex: '1 1 200px' }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{card.card_name}</div>
-              <div style={{ color: '#aaa', fontSize: 13 }}>{card.set_name} · #{card.card_number}</div>
-              <div style={{ color: '#888', fontSize: 12 }}>{card.region}</div>
-              {card.image_url && (
-                <div style={{ color: '#666', fontSize: 11, marginTop: 2, wordBreak: 'break-all' }}>
-                  {card.image_url.slice(0, 60)}…
+            <div style={{ flex: '1 1 180px' }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>{card.card_name}</div>
+              <div style={{ color: '#666', fontSize: 12 }}>{card.set_name} · #{card.card_number} · {card.region}</div>
+              {card.image_url && !done.has(card.id) && (
+                <div style={{ color: '#aaa', fontSize: 10, marginTop: 2, wordBreak: 'break-all' }}>
+                  Current: {card.image_url.slice(0, 50)}…
                 </div>
               )}
             </div>
 
             {done.has(card.id) ? (
-              <div style={{ color: '#4ade80', fontSize: 13 }}>✅ Saved</div>
+              <div style={{ color: '#16a34a', fontSize: 13, padding: '8px 0' }}>✅ Saved</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: '1 1 300px' }}>
-                {/* URL input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: '1 1 320px' }}>
+                {/* URL row */}
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input
                     type="url"
                     placeholder="Paste image URL…"
                     value={urlInputs[card.id] ?? ''}
-                    onChange={(e) => setUrlInputs((u) => ({ ...u, [card.id]: e.target.value }))}
+                    onChange={e => setUrlInputs(u => ({ ...u, [card.id]: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') saveUrl(card.id) }}
                     style={{
-                      flex: 1, padding: '7px 10px', background: '#0f0f1a',
-                      border: '1px solid #333', borderRadius: 6, color: '#f0f0f0', fontSize: 13,
+                      flex: 1, padding: '8px 10px',
+                      background: '#f9f9f9', border: '1px solid #ddd',
+                      borderRadius: 6, color: '#1a1a1a', fontSize: 13, fontFamily: 'inherit',
                     }}
                   />
                   <button
-                    onClick={() => handleUrlSave(card.id)}
-                    disabled={uploading === card.id || !urlInputs[card.id]}
-                    style={{ padding: '7px 14px', background: '#7f77dd', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                    onClick={() => saveUrl(card.id)}
+                    disabled={uploading === card.id || !urlInputs[card.id]?.trim()}
+                    style={{
+                      padding: '8px 14px', background: '#7f77dd', border: 'none',
+                      borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 13,
+                      opacity: (!urlInputs[card.id]?.trim() || uploading === card.id) ? 0.5 : 1,
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    Save URL
+                    {uploading === card.id ? 'Saving…' : 'Save URL'}
                   </button>
                 </div>
-                {/* File upload */}
-                <label style={{ cursor: 'pointer', fontSize: 12, color: '#888' }}>
-                  Or upload file:{' '}
+
+                {/* File row */}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <input
                     type="file"
                     accept="image/*"
-                    style={{ fontSize: 12 }}
-                    onChange={(e) => {
+                    onChange={e => {
                       const f = e.target.files?.[0]
-                      if (f) handleFileUpload(card.id, f)
+                      if (f) setFileSelections(s => ({ ...s, [card.id]: f }))
                     }}
+                    style={{ flex: 1, fontSize: 12, color: '#666' }}
                   />
-                </label>
+                  {fileSelections[card.id] && (
+                    <button
+                      onClick={() => saveFile(card.id)}
+                      disabled={uploading === card.id}
+                      style={{
+                        padding: '8px 14px', background: '#1a1a1a', border: 'none',
+                        borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 13,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {uploading === card.id ? 'Uploading…' : 'Upload file'}
+                    </button>
+                  )}
+                </div>
+
+                {errors[card.id] && (
+                  <div style={{ color: '#dc2626', fontSize: 11, background: '#fef2f2', padding: '6px 10px', borderRadius: 6 }}>
+                    {errors[card.id]}
+                  </div>
+                )}
               </div>
             )}
           </div>
